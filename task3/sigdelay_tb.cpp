@@ -2,10 +2,13 @@
 #include "verilated_vcd_c.h"
 #include "Vsigdelay.h"
 
-#include "vbuddy.cpp"     // include vbuddy code
+#include "vbuddy.cpp"    // include vbuddy code
+#include <cmath>         
+
 #define MAX_SIM_CYC 1000000
 #define ADDRESS_WIDTH 9
-#define RAM_SZ pow(2,ADDRESS_WIDTH)
+// Use static_cast for proper power calculation
+#define RAM_SZ (1 << ADDRESS_WIDTH) // 2^9 = 512
 
 int main(int argc, char **argv, char **env) {
   int simcyc;     // simulation clock count
@@ -27,11 +30,11 @@ int main(int argc, char **argv, char **env) {
 
   // initialize simulation input 
   top->clk = 1;
-  top->rst = 0;
+  top->rst = 1;   
   top->wr = 1;
   top->rd = 1;
   top->offset = 64;
-  
+ 
   // intialize variables for analogue output
   vbdInitMicIn(RAM_SZ);
 
@@ -43,10 +46,17 @@ int main(int argc, char **argv, char **env) {
       top->clk = !top->clk;
       top->eval ();
     }
-    top->mic_signal = vbdMicValue();
-    top->offset = abs(vbdValue());     // adjust delay by changing incr
 
-    // plot RAM input/output, send sample to DAC buffer, and print cycle count
+    // --- Apply inputs ---
+    top->rst = (simcyc < 2); 
+    top->wr = 1; // Keep write enabled
+    top->rd = 1; // Keep read enabled (as in original file)
+
+    // Get new audio sample and offset
+    top->mic_signal = vbdMicValue();
+    top->offset = abs(vbdValue());    // adjust delay by changing offset
+
+    // --- Plot outputs ---
     vbdPlot(int (top->mic_signal), 0, 255);
     vbdPlot(int (top->delayed_signal), 0, 255);
     vbdCycle(simcyc);

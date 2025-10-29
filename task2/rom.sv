@@ -9,11 +9,9 @@ module rom #(
     output logic [DATA_WIDTH-1:0]   data2   // Data from port 2
 );
 
-    // The memory array is the same as before
     logic [DATA_WIDTH-1:0] rom_array [2**ADDRESS_WIDTH-1:0];
     initial begin
         $display("Loading ROM ... ");
-        // This path might need to be "sinerom.mem" if it's in the same folder
         $readmemh("task1/sinerom.mem", rom_array); 
     end;
 
